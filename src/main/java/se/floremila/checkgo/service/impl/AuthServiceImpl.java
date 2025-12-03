@@ -12,6 +12,8 @@ import se.floremila.checkgo.dto.LoginRequest;
 import se.floremila.checkgo.dto.RegisterRequest;
 import se.floremila.checkgo.entity.Role;
 import se.floremila.checkgo.entity.User;
+import se.floremila.checkgo.exception.BadRequestException;
+import se.floremila.checkgo.exception.NotFoundException;
 import se.floremila.checkgo.repository.RoleRepository;
 import se.floremila.checkgo.repository.UserRepository;
 import se.floremila.checkgo.security.JwtService;
@@ -33,20 +35,20 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already in use");
+            throw new BadRequestException("Username already in use");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already in use");
+            throw new BadRequestException("Email already in use");
         }
 
         Role userRole = roleRepository.findByName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found"));
+                .orElseThrow(() -> new NotFoundException("Default role ROLE_USER not found"));
 
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .enabled(true)
+                .enabled(true) // false
                 .roles(Set.of(userRole))
                 .build();
 
@@ -72,22 +74,17 @@ public class AuthServiceImpl implements AuthService {
                 )
         );
 
-
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+                .orElseThrow(() -> new BadRequestException("Invalid username or password"));
 
         String token = jwtService.generateToken(userDetails);
-
 
         Set<String> roleNames = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());
 
-        // 6. Devolver AuthResponse con el token
         return AuthResponse.builder()
                 .accessToken(token)
                 .tokenType("Bearer")

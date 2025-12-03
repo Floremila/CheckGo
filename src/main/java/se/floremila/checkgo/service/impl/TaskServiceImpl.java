@@ -9,6 +9,8 @@ import se.floremila.checkgo.dto.TaskResponseDTO;
 import se.floremila.checkgo.entity.Task;
 import se.floremila.checkgo.entity.TaskStatus;
 import se.floremila.checkgo.entity.User;
+import se.floremila.checkgo.exception.ForbiddenException;
+import se.floremila.checkgo.exception.NotFoundException;
 import se.floremila.checkgo.repository.TaskRepository;
 import se.floremila.checkgo.repository.UserRepository;
 import se.floremila.checkgo.service.TaskService;
@@ -28,7 +30,7 @@ public class TaskServiceImpl implements TaskService {
         String username = auth.getName();
 
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("Current user not found"));
     }
 
     @Override
@@ -46,10 +48,10 @@ public class TaskServiceImpl implements TaskService {
         User user = getCurrentUser();
 
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new NotFoundException("Task not found"));
 
         if (!task.getOwner().getId().equals(user.getId())) {
-            throw new RuntimeException("Not allowed");
+            throw new ForbiddenException("You are not allowed to access this task");
         }
 
         return toDTO(task);
@@ -78,10 +80,10 @@ public class TaskServiceImpl implements TaskService {
         User user = getCurrentUser();
 
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new NotFoundException("Task not found"));
 
         if (!task.getOwner().getId().equals(user.getId())) {
-            throw new RuntimeException("Not allowed");
+            throw new ForbiddenException("You are not allowed to modify this task");
         }
 
         task.setTitle(request.getTitle());
@@ -101,10 +103,10 @@ public class TaskServiceImpl implements TaskService {
         User user = getCurrentUser();
 
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new NotFoundException("Task not found"));
 
         if (!task.getOwner().getId().equals(user.getId())) {
-            throw new RuntimeException("Not allowed");
+            throw new ForbiddenException("You are not allowed to delete this task");
         }
 
         taskRepository.delete(task);
