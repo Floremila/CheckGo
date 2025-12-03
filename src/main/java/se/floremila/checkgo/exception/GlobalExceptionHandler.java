@@ -1,5 +1,5 @@
 package se.floremila.checkgo.exception;
-
+import org.springframework.security.authentication.DisabledException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -89,13 +89,26 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
-        // En producción lo ideal es loggear el stacktrace aquí
+
         ErrorResponse body = buildErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Unexpected error occurred",
                 request
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorResponse> handleDisabledUser(
+            DisabledException ex,
+            HttpServletRequest request
+    ) {
+        ErrorResponse body = buildErrorResponse(
+                HttpStatus.FORBIDDEN,
+                "User account is not activated yet",
+                request
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 }
 
