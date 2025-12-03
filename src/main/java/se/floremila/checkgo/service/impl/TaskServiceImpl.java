@@ -1,6 +1,7 @@
 package se.floremila.checkgo.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import se.floremila.checkgo.service.TaskService;
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
@@ -29,13 +31,16 @@ public class TaskServiceImpl implements TaskService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
+        log.debug("Fetching current user from SecurityContext: {}", username);
+
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new NotFoundException("Current user not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
     @Override
     public List<TaskResponseDTO> getMyTasks() {
         User user = getCurrentUser();
+        log.info("Listing tasks for user id={}", user.getId());
 
         return taskRepository.findByOwnerId(user.getId())
                 .stream()
@@ -46,11 +51,14 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public TaskResponseDTO getMyTaskById(Long id) {
         User user = getCurrentUser();
+        log.info("Getting task id={} for user id={}", id, user.getId());
 
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Task not found"));
 
         if (!task.getOwner().getId().equals(user.getId())) {
+            log.warn("User id={} tried to access task id={} owned by user id={}",
+                    user.getId(), id, task.getOwner().getId());
             throw new ForbiddenException("You are not allowed to access this task");
         }
 
@@ -60,6 +68,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public TaskResponseDTO createTask(TaskRequestDTO request) {
         User user = getCurrentUser();
+        log.info("Creating task for user id={}", user.getId());
 
         Task task = new Task();
         task.setTitle(request.getTitle());
@@ -71,6 +80,7 @@ public class TaskServiceImpl implements TaskService {
         task.setOwner(user);
 
         taskRepository.save(task);
+        log.debug("Task created with id={} for user id={}", task.getId(), user.getId());
 
         return toDTO(task);
     }
@@ -78,11 +88,14 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public TaskResponseDTO updateTask(Long id, TaskRequestDTO request) {
         User user = getCurrentUser();
+        log.info("Updating task id={} for user id={}", id, user.getId());
 
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Task not found"));
 
         if (!task.getOwner().getId().equals(user.getId())) {
+            log.warn("User id={} tried to update task id={} owned by user id={}",
+                    user.getId(), id, task.getOwner().getId());
             throw new ForbiddenException("You are not allowed to modify this task");
         }
 
@@ -94,6 +107,7 @@ public class TaskServiceImpl implements TaskService {
         }
 
         taskRepository.save(task);
+        log.debug("Task id={} updated by user id={}", id, user.getId());
 
         return toDTO(task);
     }
@@ -101,15 +115,19 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public void deleteTask(Long id) {
         User user = getCurrentUser();
+        log.info("Deleting task id={} for user id={}", id, user.getId());
 
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Task not found"));
 
         if (!task.getOwner().getId().equals(user.getId())) {
+            log.warn("User id={} tried to delete task id={} owned by user id={}",
+                    user.getId(), id, task.getOwner().getId());
             throw new ForbiddenException("You are not allowed to delete this task");
         }
 
         taskRepository.delete(task);
+        log.debug("Task id={} deleted by user id={}", id, user.getId());
     }
 
     private TaskResponseDTO toDTO(Task task) {
