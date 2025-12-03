@@ -1,6 +1,7 @@
 package se.floremila.checkgo.exception;
-import org.springframework.security.authentication.DisabledException;
+
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -8,107 +9,83 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private ErrorResponse buildErrorResponse(
-            HttpStatus status,
-            String message,
-            HttpServletRequest request
-    ) {
-        return ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(status.value())
-                .error(status.getReasonPhrase())
-                .message(message)
-                .path(request.getRequestURI())
-                .build();
-    }
-
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(
+    public ResponseEntity<Map<String, Object>> handleNotFound(
             NotFoundException ex,
-            HttpServletRequest request
-    ) {
-        ErrorResponse body = buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+            HttpServletRequest request) {
+
+        log.warn("Not found: {} - path={}", ex.getMessage(), request.getRequestURI());
+        return buildErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND, request.getRequestURI());
     }
 
     @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<ErrorResponse> handleForbidden(
+    public ResponseEntity<Map<String, Object>> handleForbidden(
             ForbiddenException ex,
-            HttpServletRequest request
-    ) {
-        ErrorResponse body = buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
-    }
+            HttpServletRequest request) {
 
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequest(
-            BadRequestException ex,
-            HttpServletRequest request
-    ) {
-        ErrorResponse body = buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+        log.warn("Forbidden: {} - path={}", ex.getMessage(), request.getRequestURI());
+        return buildErrorResponse(ex.getMessage(), HttpStatus.FORBIDDEN, request.getRequestURI());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Object> handleValidation(
+    public ResponseEntity<Map<String, Object>> handleValidation(
             MethodArgumentNotValidException ex,
-            HttpServletRequest request
-    ) {
-        Map<String, String> errors = new HashMap<>();
+            HttpServletRequest request) {
 
-        ex.getBindingResult().getAllErrors().forEach(err -> {
-            String field = ((FieldError) err).getField();
-            String msg = err.getDefaultMessage();
-            errors.put(field, msg);
-        });
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(FieldError::getDefaultMessage)
+                .orElse("Validation failed");
 
-        ErrorResponse body = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Validation failed")
-                .message("One or more fields are invalid")
-                .path(request.getRequestURI())
-                .build();
+        log.warn("Validation error: {} - path={}", message, request.getRequestURI());
+        return buildErrorResponse(message, HttpStatus.BAD_REQUEST, request.getRequestURI());
+    }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("error", body);
-        response.put("fieldErrors", errors);
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntime(
+            RuntimeException ex,
+            HttpServletRequest request) {
 
-        return ResponseEntity.badRequest().body(response);
+        log.warn("Business error: {} - path={}", ex.getMessage(), request.getRequestURI());
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request.getRequestURI());
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneric(
+    public ResponseEntity<Map<String, Object>> handleUnknown(
             Exception ex,
-            HttpServletRequest request
-    ) {
+            HttpServletRequest request) {
 
-        ErrorResponse body = buildErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR,
+        log.error("Unexpected error on path={}", request.getRequestURI(), ex);
+        return buildErrorResponse(
                 "Unexpected error occurred",
-                request
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                request.getRequestURI()
         );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 
-    @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<ErrorResponse> handleDisabledUser(
-            DisabledException ex,
-            HttpServletRequest request
-    ) {
-        ErrorResponse body = buildErrorResponse(
-                HttpStatus.FORBIDDEN,
-                "User account is not activated yet",
-                request
-        );
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    private ResponseEntity<Map<String, Object>> buildErrorResponse(
+            String message,
+            HttpStatus status,
+            String path) {
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", Instant.now().toString());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("message", message);
+        body.put("path", path);
+
+        return ResponseEntity.status(status).body(body);
     }
 }
 
