@@ -1,0 +1,25 @@
+services:
+  api:
+    build: .
+    container_name: checkgo-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rabbitmq
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    volumes:
+          - ./data:/app/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: checkgo-rabbit
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+
+

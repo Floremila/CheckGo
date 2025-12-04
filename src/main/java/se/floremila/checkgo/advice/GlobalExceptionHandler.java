@@ -1,13 +1,18 @@
-package se.floremila.checkgo.exception;
+package se.floremila.checkgo.advice;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import se.floremila.checkgo.exception.BadRequestException;
+import se.floremila.checkgo.exception.ForbiddenException;
+import se.floremila.checkgo.exception.NotFoundException;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -35,6 +40,15 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex.getMessage(), HttpStatus.FORBIDDEN, request.getRequestURI());
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<Map<String, Object>> handleBadRequest(
+            BadRequestException ex,
+            HttpServletRequest request) {
+
+        log.warn("Bad request: {} - path={}", ex.getMessage(), request.getRequestURI());
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request.getRequestURI());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(
             MethodArgumentNotValidException ex,
@@ -51,10 +65,39 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(message, HttpStatus.BAD_REQUEST, request.getRequestURI());
     }
 
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleBadCredentials(
+            BadCredentialsException ex,
+            HttpServletRequest request) {
+
+        log.warn("Bad credentials on path={}", request.getRequestURI());
+
+        return buildErrorResponse(
+                "Invalid username or password",
+                HttpStatus.UNAUTHORIZED,
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<Map<String, Object>> handleDisabled(
+            DisabledException ex,
+            HttpServletRequest request) {
+
+        log.warn("Disabled user trying to login - path={}", request.getRequestURI());
+
+        return buildErrorResponse(
+                "User is disabled",
+                HttpStatus.BAD_REQUEST,
+                request.getRequestURI()
+        );
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntime(
             RuntimeException ex,
             HttpServletRequest request) {
+
 
         log.warn("Business error: {} - path={}", ex.getMessage(), request.getRequestURI());
         return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request.getRequestURI());
