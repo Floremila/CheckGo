@@ -13,6 +13,7 @@ import se.floremila.checkgo.dto.LoginRequest;
 import se.floremila.checkgo.dto.RegisterRequest;
 import se.floremila.checkgo.entity.Role;
 import se.floremila.checkgo.entity.User;
+import se.floremila.checkgo.messaging.UserActivationPublisher;
 import se.floremila.checkgo.repository.RoleRepository;
 import se.floremila.checkgo.repository.UserRepository;
 import se.floremila.checkgo.security.JwtService;
@@ -31,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final UserActivationPublisher userActivationPublisher; // 👈 nuevo
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -55,15 +57,23 @@ public class AuthServiceImpl implements AuthService {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .enabled(false)
+                .enabled(false)              // 👉 se crea deshabilitado
                 .roles(Set.of(userRole))
                 .build();
 
         userRepository.save(user);
         log.info("User registered with id={}, username={}", user.getId(), user.getUsername());
 
+
+        try {
+            userActivationPublisher.sendActivationRequest(user.getId());
+            log.info("Activation request sent for user id={}", user.getId());
+        } catch (Exception e) {
+            log.error("Failed to send activation request for user {}", user.getId(), e);
+        }
+
         return AuthResponse.builder()
-                .accessToken(null)
+                .accessToken(null) // aún no se logueó, solo se registró
                 .tokenType("Bearer")
                 .userId(user.getId())
                 .username(user.getUsername())
@@ -109,5 +119,6 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 }
+
 
 
