@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Checkgo - Todo App</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem 3rem;
+            background: #f7f7f7;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1.1fr 1.1fr;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            margin-top: 0.7rem;
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.4rem 0.5rem;
+            margin-top: 0.2rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        button {
+            margin-top: 0.9rem;
+            padding: 0.5rem 1.1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        button.primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        button.secondary {
+            background: #e5e7eb;
+        }
+
+        button.danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        #auth-section, #app-section {
+            transition: opacity 0.2s ease;
+        }
+
+        #message, .msg {
+            margin-top: 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        .success {
+            color: #15803d;
+        }
+
+        .error {
+            color: #b91c1c;
+        }
+
+        ul {
+            padding-left: 1.2rem;
+        }
+
+        li {
+            margin-bottom: 0.3rem;
+        }
+
+        small {
+            color: #6b7280;
+        }
+
+        .task-item {
+            display: flex;
+            flex-direction: column;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .task-title {
+            font-weight: 600;
+        }
+
+        .task-meta {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .task-actions {
+            margin-top: 0.3rem;
+        }
+
+        .task-actions button {
+            margin-right: 0.3rem;
+        }
+
+        .admin-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            background: #fee2e2;
+            color: #b91c1c;
+            font-size: 0.75rem;
+            margin-left: 0.4rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.7rem;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 0.35rem 0.5rem;
+            text-align: left;
+        }
+
+        th {
+            background: #f3f4f6;
+        }
+
+        @media (max-width: 800px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<h1>Checkgo</h1>
+
+<div id="auth-section" class="layout">
+    <div class="card">
+        <h2>Register</h2>
+        <label>Username
+            <input type="text" id="reg-username"/>
+        </label>
+        <label>Email
+            <input type="email" id="reg-email"/>
+        </label>
+        <label>Password
+            <input type="password" id="reg-password"/>
+        </label>
+        <button class="primary" id="register-btn">Register</button>
+        <div id="register-message" class="msg"></div>
+    </div>
+
+    <div class="card">
+        <h2>Login</h2>
+        <label>Username
+            <input type="text" id="login-username"/>
+        </label>
+        <label>Password
+            <input type="password" id="login-password"/>
+        </label>
+        <button class="primary" id="login-btn">Login</button>
+        <div id="login-message" class="msg"></div>
+    </div>
+</div>
+
+<div id="app-section" style="display:none;">
+    <div class="card">
+        <h2>
+            Todo App
+            <span id="admin-badge" class="admin-badge" style="display:none;">ADMIN</span>
+        </h2>
+        <p>
+            Logged in as <strong><span id="current-user"></span></strong>
+        </p>
+        <button class="secondary" id="logout-btn">Logout</button>
+        <div id="app-message" class="msg"></div>
+    </div>
+
+    <div class="layout">
+
+        <div class="card">
+            <h3>Create / Edit Task</h3>
+            <input type="hidden" id="task-id"/>
+
+            <label>Title
+                <input type="text" id="task-title"/>
+            </label>
+
+            <label>Description
+                <textarea id="task-description"></textarea>
+            </label>
+
+            <label>Status
+                <select id="task-status">
+                    <option value="TODO">TODO</option>
+                    <option value="IN_PROGRESS">IN_PROGRESS</option>
+                    <option value="DONE">DONE</option>
+                </select>
+            </label>
+
+            <label>Due date
+                <input type="date" id="task-dueDate"/>
+            </label>
+
+            <button class="primary" id="save-task-btn">Save task</button>
+            <button class="secondary" id="cancel-edit-btn" style="display:none;">Cancel edit</button>
+
+            <div id="task-form-message" class="msg"></div>
+        </div>
+
+        <div class="card">
+            <h3>Your tasks</h3>
+            <button class="primary" id="load-tasks-btn">Reload tasks</button>
+            <div id="tasks-message" class="msg"></div>
+            <div id="tasks-list"></div>
+        </div>
+    </div>
+
+    <div class="card" id="admin-section" style="display:none;">
+        <h3>Admin – Users</h3>
+        <button class="primary" id="load-users-btn">Load users</button>
+        <div id="admin-message" class="msg"></div>
+        <div id="users-table-wrapper"></div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '/api';
+    const TASKS_ENDPOINT = '/tasks';
+    const ADMIN_USERS_ENDPOINT = '/admin/users';
+
+
+
+    function saveAuth(data) {
+        if (data.accessToken) {
+            localStorage.setItem('jwt', data.accessToken);
+        }
+        if (data.username) {
+            localStorage.setItem('username', data.username);
+        }
+        if (data.roles) {
+            localStorage.setItem('roles', JSON.stringify(data.roles));
+        }
+    }
+
+    function getToken() {
+        return localStorage.getItem('jwt');
+    }
+
+    function getUsername() {
+        return localStorage.getItem('username') || 'user';
+    }
+
+    function getRoles() {
+        const raw = localStorage.getItem('roles');
+        if (!raw) return [];
+        try {
+            return JSON.parse(raw);
+        } catch {
+            return [];
+        }
+    }
+
+    function isAdmin() {
+        const roles = getRoles();
+        return roles.includes('ROLE_ADMIN');
+    }
+
+    function clearAuth() {
+        localStorage.removeItem('jwt');
+        localStorage.removeItem('username');
+        localStorage.removeItem('roles');
+    }
+
+
+
+    function showApp() {
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('app-section').style.display = 'block';
+        document.getElementById('current-user').innerText = getUsername();
+
+
+        const adminBadge = document.getElementById('admin-badge');
+        const adminSection = document.getElementById('admin-section');
+
+        if (isAdmin()) {
+            adminBadge.style.display = 'inline-block';
+            adminSection.style.display = 'block';
+        } else {
+            adminBadge.style.display = 'none';
+            adminSection.style.display = 'none';
+        }
+    }
+
+    function showAuth() {
+        document.getElementById('auth-section').style.display = 'grid';
+        document.getElementById('app-section').style.display = 'none';
+        document.getElementById('current-user').innerText = '';
+        document.getElementById('tasks-list').innerHTML = '';
+        document.getElementById('app-message').textContent = '';
+        clearTaskForm();
+    }
+
+    function clearTaskForm() {
+        document.getElementById('task-id').value = '';
+        document.getElementById('task-title').value = '';
+        document.getElementById('task-description').value = '';
+        document.getElementById('task-status').value = 'TODO';
+        document.getElementById('task-dueDate').value = '';
+        document.getElementById('task-form-message').textContent = '';
+        document.getElementById('task-form-message').className = 'msg';
+        document.getElementById('cancel-edit-btn').style.display = 'none';
+        document.getElementById('save-task-btn').textContent = 'Save task';
+    }
+
+    function setTaskFormForEdit(task) {
+        document.getElementById('task-id').value = task.id;
+        document.getElementById('task-title').value = task.title || '';
+        document.getElementById('task-description').value = task.description || '';
+        document.getElementById('task-status').value = task.status || 'TODO';
+        document.getElementById('task-dueDate').value = task.dueDate || '';
+        document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+        document.getElementById('save-task-btn').textContent = 'Update task';
+    }
+
+
+
+    document.getElementById('register-btn').addEventListener('click', async () => {
+        const username = document.getElementById('reg-username').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const password = document.getElementById('reg-password').value.trim();
+        const msg = document.getElementById('register-message');
+
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        if (!username || !email || !password) {
+            msg.textContent = 'Please fill in all fields.';
+            msg.classList.add('error');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/auth/register`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, email, password})
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                msg.textContent = data.message || 'Register failed';
+                msg.classList.add('error');
+                return;
+            }
+
+            msg.textContent = `User ${data.username || username} registered. Wait until the account is activated before login.`;
+            msg.classList.add('success');
+        } catch (e) {
+            console.error(e);
+            msg.textContent = 'Network error during registration.';
+            msg.classList.add('error');
+        }
+    });
+
+
+
+    document.getElementById('login-btn').addEventListener('click', async () => {
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value.trim();
+        const msg = document.getElementById('login-message');
+
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        if (!username || !password) {
+            msg.textContent = 'Please fill in username and password.';
+            msg.classList.add('error');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password})
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                msg.textContent = data.message || 'Login failed';
+                msg.classList.add('error');
+                return;
+            }
+
+            if (!data.accessToken) {
+                msg.textContent = 'No token returned from API.';
+                msg.classList.add('error');
+                return;
+            }
+
+            saveAuth(data);
+            msg.textContent = 'Login successful.';
+            msg.classList.add('success');
+
+            showApp();
+            await loadTasks();
+
+        } catch (e) {
+            console.error(e);
+            msg.textContent = 'Network error during login.';
+            msg.classList.add('error');
+        }
+    });
+
+
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        clearAuth();
+        showAuth();
+    });
+
+
+
+    async function loadTasks() {
+        const msg = document.getElementById('tasks-message');
+        const listContainer = document.getElementById('tasks-list');
+        msg.textContent = '';
+        msg.className = 'msg';
+        listContainer.innerHTML = '';
+
+        const token = getToken();
+        if (!token) {
+            msg.textContent = 'You are not logged in.';
+            msg.classList.add('error');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}${TASKS_ENDPOINT}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                msg.textContent = data.message || 'Failed to load tasks.';
+                msg.classList.add('error');
+                return;
+            }
+
+            if (!Array.isArray(data) || data.length === 0) {
+                msg.textContent = 'No tasks found.';
+                msg.classList.add('success');
+                return;
+            }
+
+            data.forEach(task => {
+                const div = document.createElement('div');
+                div.className = 'task-item';
+
+                const title = document.createElement('div');
+                title.className = 'task-title';
+                title.textContent = task.title || '(no title)';
+
+                const meta = document.createElement('div');
+                meta.className = 'task-meta';
+                const statusText = task.status ? `Status: ${task.status}` : '';
+                const dueText = task.dueDate ? `Due: ${task.dueDate}` : '';
+                meta.textContent = [statusText, dueText].filter(Boolean).join(' | ');
+
+                const actions = document.createElement('div');
+                actions.className = 'task-actions';
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'secondary';
+                editBtn.textContent = 'Edit';
+                editBtn.addEventListener('click', () => setTaskFormForEdit(task));
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'danger';
+                delBtn.textContent = 'Delete';
+                delBtn.addEventListener('click', () => deleteTask(task.id));
+
+                actions.appendChild(editBtn);
+                actions.appendChild(delBtn);
+
+                div.appendChild(title);
+                div.appendChild(meta);
+                div.appendChild(actions);
+
+                listContainer.appendChild(div);
+            });
+
+        } catch (e) {
+            console.error(e);
+            msg.textContent = 'Network error while loading tasks.';
+            msg.classList.add('error');
+        }
+    }
+
+    document.getElementById('load-tasks-btn').addEventListener('click', loadTasks);
+
+
+
+    document.getElementById('save-task-btn').addEventListener('click', async () => {
+        const id = document.getElementById('task-id').value;
+        const title = document.getElementById('task-title').value.trim();
+        const description = document.getElementById('task-description').value.trim();
+        const status = document.getElementById('task-status').value;
+        const dueDate = document.getElementById('task-dueDate').value || null;
+        const msg = document.getElementById('task-form-message');
+
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        if (!title) {
+            msg.textContent = 'Title is required.';
+            msg.classList.add('error');
+            return;
+        }
+
+        const token = getToken();
+        if (!token) {
+            msg.textContent = 'You are not logged in.';
+            msg.classList.add('error');
+            return;
+        }
+
+        const payload = {
+            title,
+            description: description || null,
+            status: status || null,
+            dueDate: dueDate
+        };
+
+        const isEdit = !!id;
+
+        try {
+            const url = isEdit
+                ? `${API_BASE}${TASKS_ENDPOINT}/${id}`
+                : `${API_BASE}${TASKS_ENDPOINT}`;
+
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                msg.textContent = data.message || (isEdit ? 'Failed to update task.' : 'Failed to create task.');
+                msg.classList.add('error');
+                return;
+            }
+
+            msg.textContent = isEdit ? 'Task updated.' : 'Task created.';
+            msg.classList.add('success');
+            clearTaskForm();
+            await loadTasks();
+
+        } catch (e) {
+            console.error(e);
+            msg.textContent = 'Network error while saving task.';
+            msg.classList.add('error');
+        }
+    });
+
+    document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+        clearTaskForm();
+    });
+
+
+
+    async function deleteTask(id) {
+        if (!confirm('Delete this task?')) return;
+
+        const token = getToken();
+        const msg = document.getElementById('tasks-message');
+
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        if (!token) {
+            msg.textContent = 'You are not logged in.';
+            msg.classList.add('error');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}${TASKS_ENDPOINT}/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.status === 204) {
+                msg.textContent = 'Task deleted.';
+                msg.classList.add('success');
+                await loadTasks();
+                return;
+            }
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                msg.textContent = data.message || 'Failed to delete task.';
+                msg.classList.add('error');
+                return;
+            }
+        } catch (e) {
+            console.error(e);
+            msg.textContent = 'Network error while deleting task.';
+            msg.classList.add('error');
+        }
+    }
+
+
+
+    document.getElementById('load-users-btn').addEventListener('click', async () => {
+        const token = getToken();
+        const msg = document.getElementById('admin-message');
+        const wrapper = document.getElementById('users-table-wrapper');
+
+        msg.textContent = '';
+        msg.className = 'msg';
+        wrapper.innerHTML = '';
+
+        if (!token) {
+            msg.textContent = 'You are not logged in.';
+            msg.classList.add('error');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}${ADMIN_USERS_ENDPOINT}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.status === 403) {
+                msg.textContent = 'You are not allowed to view users (requires ADMIN role).';
+                msg.classList.add('error');
+                return;
+            }
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                msg.textContent = data.message || 'Failed to load users.';
+                msg.classList.add('error');
+                return;
+            }
+
+            if (!Array.isArray(data) || data.length === 0) {
+                msg.textContent = 'No users found.';
+                msg.classList.add('success');
+                return;
+            }
+
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const trHead = document.createElement('tr');
+            ['ID', 'Username', 'Email'].forEach(h => {
+                const th = document.createElement('th');
+                th.textContent = h;
+                trHead.appendChild(th);
+            });
+            thead.appendChild(trHead);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            data.forEach(u => {
+                const tr = document.createElement('tr');
+                const tdId = document.createElement('td');
+                const tdUser = document.createElement('td');
+                const tdEmail = document.createElement('td');
+                tdId.textContent = u.id;
+                tdUser.textContent = u.username;
+                tdEmail.textContent = u.email;
+                tr.appendChild(tdId);
+                tr.appendChild(tdUser);
+                tr.appendChild(tdEmail);
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            wrapper.appendChild(table);
+
+        } catch (e) {
+            console.error(e);
+            msg.textContent = 'Network error while loading users.';
+            msg.classList.add('error');
+        }
+    });
+
+
+
+    (function init() {
+        const token = getToken();
+        if (token) {
+            showApp();
+
+            loadTasks();
+        } else {
+            showAuth();
+        }
+    })();
+</script>
+</body>
+</html>
+

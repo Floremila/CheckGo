@@ -31,6 +31,10 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers("/", "/index.html").permitAll()
+
+
                         .requestMatchers(
                                 "/h2-console/**",
                                 "/api/auth/**",
@@ -38,7 +42,11 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
+
+
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -47,7 +55,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
 
 
     @Bean
