@@ -57,7 +57,7 @@ public class AuthServiceImpl implements AuthService {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .enabled(false)              // 👉 se crea deshabilitado
+                .enabled(false)
                 .roles(Set.of(userRole))
                 .build();
 
@@ -73,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return AuthResponse.builder()
-                .accessToken(null) // aún no se logueó, solo se registró
+                .accessToken(null)
                 .tokenType("Bearer")
                 .userId(user.getId())
                 .username(user.getUsername())
