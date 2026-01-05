@@ -10,6 +10,16 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
 
+  frontend:
+    build:
+      context: ../checkgo-frontend
+      dockerfile: Dockerfile
+    container_name: checkgo-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
   postgres:
     image: postgres:16
     container_name: checkgo-postgres
