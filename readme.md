@@ -157,3 +157,12 @@ This documentation supports reflection and evaluation in the final report.
 - Automated testing for core backend functionality
 - Improved monitoring and logging in production
 - Additional frontend features and UI enhancements
+
+### User feedback–driven improvement
+
+During manual testing with users, a usability improvement was identified in the registration flow.
+
+When password validation fails (for example, due to insufficient length), the backend correctly rejects the request.  
+However, the frontend currently displays a generic error message.
+
+A potential future improvement would be to surface more specific, user-friendly validation feedback (such as password requirements), so users can immediately understand what needs to be corrected.
