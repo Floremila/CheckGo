@@ -22,6 +22,14 @@ The focus of the degree project was to:
 
 This repository represents the **final backend solution** used in the deployed product.
 
+## Deployment
+
+- **Frontend (Vercel):** https://checkgo-frontend.vercel.app
+- **Backend (Render):** https://checkgo.onrender.com
+
+The frontend consumes the backend API deployed on Render.  
+Both services are configured using environment variables and deployed independently.
+
 ---
 
 ## Architecture Overview
