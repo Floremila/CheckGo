@@ -1,119 +1,159 @@
-# Checkgo API
 
-Checkgo is a secure, containerized REST API built with **Spring Boot 3**, providing user authentication, authorization, and a modular task-management feature.  
-The system follows modern security standards, supports asynchronous event handling through **RabbitMQ**, and runs fully inside Docker.
+# CheckGo – Degree Project
 
-## 1. Architecture Overview
+This repository contains the backend part of **CheckGo**, developed as part of my **degree project**.
 
-The API is designed around three core principles:
+The project is based on an existing backend created during a Java EE course and was later refactored and extended into a fullstack application.  
+The focus of the degree project was refactoring, frontend integration, database migration, and cloud deployment to create a production-like product.
 
-1. **Security-first architecture**
-    - JWT-based authentication
-    - Stateless request processing
-    - Role-based access control
-    - Password hashing using BCrypt
-    - Centralized exception handling
+---
 
-2. **Event-driven integration**
-    - A RabbitMQ-backed activation flow
-    - User registration triggers an activation message
-    - A listener processes activation and updates account state
+## Degree Project Scope
 
-3. **Modular domain logic**
-    - User domain
-    - Task domain
-    - Admin domain
+The focus of the degree project was to:
+
+- Refactor an existing Spring Boot backend from a previous Java EE course
+- Separate frontend and backend responsibilities
+- Integrate a standalone frontend built with React (Vite)
+- Migrate the database from H2 to PostgreSQL for production use
+- Deploy the backend to Render and the frontend to Vercel
+- Integrate RabbitMQ as part of the system architecture
+- Verify functionality through structured manual end-to-end testing
+
+This repository represents the **final backend solution** used in the deployed product.
+
+---
+
+## Architecture Overview
+
+The API is designed around the following core principles:
+
+### Security-first architecture
+- JWT-based authentication
+- Stateless request processing
+- Role-based access control
+- Password hashing using BCrypt
+- Centralized exception handling
+
+### Event-driven integration
+- RabbitMQ-backed activation flow
+- User registration triggers an activation message
+- A listener processes activation and updates account state
+
+### Modular domain logic
+- User domain
+- Task domain
+- Admin domain
 
 All modules communicate via clean DTOs and follow separation of concerns.
 
-## 2. Features
+---
 
-### 🔐 Authentication & Authorization
-- Register, login and JWT token handling
+## Features
+
+### Authentication & Authorization
+- Register and login with JWT token handling
 - Stateless Spring Security configuration
 - Role-based access for protected endpoints
-- Default user role: `ROLE_USER`
+- Default user role: ROLE_USER
 - Support for admin-specific operations
 
-### 📝 Task Management Module
+### Task Management Module
 CRUD operations for authenticated users:
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/tasks` | Retrieve tasks for current user |
-| POST | `/api/tasks` | Create a new task |
-| PUT | `/api/tasks/{id}` | Update an existing task |
-| DELETE | `/api/tasks/{id}` | Delete task |
+|------|---------|------------|
+| GET | /api/tasks | Retrieve tasks for current user |
+| POST | /api/tasks | Create a new task |
+| PUT | /api/tasks/{id} | Update an existing task |
+| DELETE | /api/tasks/{id} | Delete a task |
 
-Tasks include:
-- Title
-- Description
-- Status
-- Due date
-- Audit timestamps
-- Ownership enforcement
+Tasks include title, description, status, due date, audit timestamps, and ownership enforcement.
 
-### 🛰 Event-Driven User Activation
+### Event-Driven User Activation
 The API publishes an event when a new user registers.  
-RabbitMQ handles the activation flow:
-- **Publisher** sends `userId`
-- **Listener** activates user asynchronously
+RabbitMQ handles the activation flow asynchronously.
 
-### 🗄 Persistence
-- File-based H2 storage (`jdbc:h2:file:./data/checkgo`)
-- Data persists across container restarts
-- JPA with Hibernate and automatic schema updates
+### Persistence
+- H2 (local development)
+- PostgreSQL (Docker-based environments and production)
+- JPA with Hibernate
+- Environment-based configuration using Spring profiles
 
-### 🧩 Admin Module
-`ROLE_ADMIN` users can view all registered users:
+### Admin Module
+ROLE_ADMIN users can view all registered users:
 
 | Method | Endpoint |
-|--------|----------|
-| GET | `/api/admin/users` |
+|------|---------|
+| GET | /api/admin/users |
 
-## 3. Technology Stack
+---
+
+## Technology Stack
 - Java 17
 - Spring Boot 3
 - Spring Security (JWT)
 - Hibernate / JPA
+- PostgreSQL
 - RabbitMQ
 - Docker & Docker Compose
-- H2 Persistent Database
+- OpenAPI / Swagger
 - Lombok
+- Cloud deployment (Render)
 
-## 4. Running the Application
+---
+
+## Running the Application
 
 ### With Docker (recommended)
+Runs the full system with PostgreSQL and RabbitMQ.
 ```
 docker compose up --build
 ```
 
 ### Without Docker
+Runs the backend locally using H2 for development purposes.
+Event-driven features require RabbitMQ to be available.
 ```
 mvn spring-boot:run
 ```
 
-## 5. Development Utilities
-- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- H2 Console: `http://localhost:8080/h2-console`  
-  JDBC: `jdbc:h2:file:./data/checkgo-db`
+---
 
-## 6. Project Structure
+## Development Utilities
+- Swagger UI: http://localhost:8080/swagger-ui/index.html
+
+---
+
+## Project Structure
 ```
 src/main/java/se/floremila/checkgo
-├── advice/                
-├── config/                
-├── controller/            
-├── dto/                   
-├── entity/                
-├── messaging/             
-├── repository/            
-├── security/              
-└── service/               
+├── advice/
+├── config/
+├── controller/
+├── dto/
+├── entity/
+├── messaging/
+├── repository/
+├── security/
+└── service/
 ```
 
-## 7. Future Enhancements
-- React-based frontend
-- Email notification microservice
-- Multi-environment Docker setup
-- PostgreSQL production profile  
+---
+
+## Documentation
+
+The project is documented using:
+- GitHub commit history
+- Screenshots from development and debugging
+- A lightweight logbook describing decisions, issues, solutions, and lessons learned
+
+This documentation supports reflection and evaluation in the final report.
+
+---
+
+## Possible Improvements
+
+- Automated testing for core backend functionality
+- Improved monitoring and logging in production
+- Additional frontend features and UI enhancements
