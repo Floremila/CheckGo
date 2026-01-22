@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Ping /health
         run: |
-          curl -fsS https://<tu-backend>.onrender.com/health > /dev/null
+          curl -fsS https://checkgo.onrender.com/health
