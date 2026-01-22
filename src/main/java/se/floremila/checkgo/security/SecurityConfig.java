@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/", "/index.html").permitAll()
                         .requestMatchers(
+                                "/health",
                                 "/api/auth/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
